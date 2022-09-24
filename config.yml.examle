@@ -1,0 +1,75 @@
+bot_token: ''
+notifier_seconds: 60
+per_page_limit: 20
+db_uri: 'mongodb://localhost:27017'
+db_name: ''
+main_channel_url: 'https://t.me/'
+inline_cache_time: 300
+clear_class:
+  id: ''
+  channel_id: -1
+  bot_channel_url: ''
+  post_channel_url: ''
+default_class:
+  id: '-1'
+  channel_id: -100
+  bot_channel_url: ''
+  post_channel_url: 'https://t.me/'
+timetable:
+  storage_filename: timetable_storage.json
+  response_filename: timetable_response_{number}.json
+  classes_filename: timetable_classes.json
+  numbers:
+    - '58'
+    - '61'
+  classes:
+    '1 А':
+      name: '1 А'
+      id: '*1'
+      timetable_number: '1'
+      channel_id: -100
+      bot_channel_url: 'https://t.me/'
+      post_channel_url: 'https://t.me/'
+alphabet:
+  - А
+  - Ә
+  - Б
+  - В
+  - Г
+  - Ғ
+  - Д
+  - Е
+  - Ё
+  - Ж
+  - З
+  - И
+  - Й
+  - К
+  - Қ
+  - Л
+  - М
+  - Н
+  - Ң
+  - О
+  - Ө
+  - П
+  - Р
+  - С
+  - Т
+  - У
+  - Ұ
+  - Ү
+  - Ф
+  - Х
+  - Һ
+  - Ц
+  - Ч
+  - Ш
+  - Щ
+  - Ъ
+  - Ы
+  - І
+  - Ь
+  - Э
+  - Ю
+  - Я
