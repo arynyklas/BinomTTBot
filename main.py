@@ -574,7 +574,7 @@ async def on_startup() -> None:
                 class__["timetable_number"] = timetable_number
                 config.timetable.classes[class_name] = class__
 
-    def classes_sort(item: tuple[str, dict]) -> tuple[int, int]:
+    def classes_sort(item: Tuple[str, dict]) -> Tuple[int, int]:
         grade, letter = item[0].split()
         return int(grade), TEXTS["alphabet"].index(letter.replace("*", "", 1))
 
