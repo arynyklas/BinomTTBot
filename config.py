@@ -25,7 +25,6 @@ class Config:
     clear_class: dict
     default_class: dict
     timetable: TimetableConfig
-    alphabet: List[str]
 
 
 with open("config.yml", "r", encoding="utf-8") as file:
@@ -34,14 +33,14 @@ with open("config.yml", "r", encoding="utf-8") as file:
         Loader = Loader
     )
 
-    timetable: TimetableConfig = TimetableConfig(
-        **data.pop("timetable")
-    )
+timetable: TimetableConfig = TimetableConfig(
+    **data.pop("timetable")
+)
 
-    config: Config = Config(
-        timetable = timetable,
-        **data
-    )
+config: Config = Config(
+    timetable = timetable,
+    **data
+)
 
 
 __all__ = (

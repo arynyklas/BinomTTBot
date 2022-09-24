@@ -576,7 +576,7 @@ async def on_startup() -> None:
 
     def classes_sort(item: tuple[str, dict]) -> tuple[int, int]:
         grade, letter = item[0].split()
-        return int(grade), config.alphabet.index(letter.replace("*", "", 1))
+        return int(grade), TEXTS["alphabet"].index(letter.replace("*", "", 1))
 
     config.timetable.classes = dict(sorted(config.timetable.classes.items(), key=classes_sort))
 
