@@ -7,7 +7,7 @@
 ### [dictdiffer](https://pypi.org/project/dictdiffer/) - 0.9.0
 
 # Config setup:
-- Rename config.yml.example to config.yml
+- Rename `config.yml.example` to `config.yml`
 - Set values for this keys: `bot_token`, `db_uri`, `db_name`, `main_channel_url`
 - Set value for `channel_id` and `post_channel_url` in `default_class` (the channel to track all changes of timetables)
 - If you want, you can track timetable changes into other channels:
