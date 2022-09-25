@@ -24,6 +24,9 @@ timetable:
   numbers:
     - '64'
     - '65'
+  old_numbers:
+    '58': '64'
+    '61': '65'
   classes:
     '1 А':
       name: '1 А'
