@@ -90,139 +90,148 @@ class UsersMiddleware(BaseMiddleware):
 async def notifier(seconds: int) -> None:
     global tables
 
-    while True:
-        for timetable_number in config.timetable.numbers:
-            timetable, tables_ = await timetable_api.get_newest_timetables(
-                timetable_number = timetable_number,
-                old_tables = tables[timetable_number]
-            )
-
-            if not timetable:
-                continue
-
-            null_timetable: Dict[str, Dict[str, Union[str, int]]] = {
-                period_id: None
-                for period_id in tables_["periods"].keys()
-            }
-
-            for class_id, class_timetable in timetable.items():
-                class_timetable_ = timetable_api.sort(
-                    class_timetable = class_timetable
+    try:
+        while True:
+            for timetable_number in config.timetable.numbers:
+                timetable, tables_ = await timetable_api.get_newest_timetables(
+                    timetable_number = timetable_number,
+                    old_tables = tables[timetable_number]
                 )
 
-                class_timetable = deepcopy(class_timetable_)
+                if not timetable:
+                    continue
 
-                daysdefs_lessons: Dict[str, Dict[str, str]] = {}
+                null_timetable: Dict[str, Dict[str, Union[str, int]]] = {
+                    period_id: None
+                    for period_id in tables_["periods"].keys()
+                }
 
-                for day_id in class_timetable.keys():
-                    for period_id, lesson in class_timetable_[day_id].items():
-                        lesson: Optional[Lesson]
+                for class_id, class_timetable in timetable.items():
+                    class_timetable_ = timetable_api.sort(
+                        class_timetable = class_timetable
+                    )
 
-                        if not lesson:
-                            daysdefs_lessons[day_id][period_id] = TEXTS["edupage"]["timetable"]["unknown_lesson"].format(
-                                period = period["name"],
-                                start_time = period["starttime"],
-                                end_time = period["endtime"]
-                            )
+                    class_timetable = deepcopy(class_timetable_)
 
-                            continue
+                    daysdefs_lessons: Dict[str, Dict[str, str]] = {}
 
-                        if day_id not in daysdefs_lessons:
-                            daysdefs_lessons[day_id] = deepcopy(null_timetable)
+                    for day_id in class_timetable.keys():
+                        for period_id, lesson in class_timetable_[day_id].items():
+                            lesson: Optional[Lesson]
 
-                        int_lesson_period: int = int(lesson.period)
-
-                        for i in range(lesson.durationperiods):
-                            period_id: str = str(int_lesson_period + i)
-                            period: dict = tables_["periods"][period_id]
-
-                            daysdefs_lessons[day_id][period_id] = TEXTS["edupage"]["timetable"]["lesson"].format(
-                                period = period["name"],
-                                start_time = period["starttime"],
-                                end_time = period["endtime"],
-                                subject = tables_["subjects"][lesson.subjectid]["name"].strip(),
-                                teachers = ", ".join([tables_["teachers"][teacher_id]["lastname"].strip() for teacher_id in lesson.teacherids]),
-                                groups = ", ".join([tables_["groups"][group_id]["name"] for group_id in lesson.groupids]).lower(),
-                                classrooms = (
-                                    ", ".join([tables_["classrooms"][classroom_id]["name"].strip().split(" ", 1)[0] for classroom_id in lesson.classroomidss])
-                                    if lesson.classroomidss and lesson.classroomidss[0] != ""
-                                    else
-                                    ", ".join([" | ".join([tables_["classrooms"][classroom_id]["name"].strip().split(" ", 1)[0] for classroom_id in classroom_idss]) for classroom_idss in lesson.classroomidss])
+                            if not lesson:
+                                daysdefs_lessons[day_id][period_id] = TEXTS["edupage"]["timetable"]["unknown_lesson"].format(
+                                    period = period["name"],
+                                    start_time = period["starttime"],
+                                    end_time = period["endtime"]
                                 )
-                            )
 
-                        class_timetable[day_id][period_id] = asdict(lesson)
-                        classes_timetables[timetable_number][class_id][day_id][period_id] = lesson
+                                continue
 
-                daysdefs_lessons = timetable_api.sort(
-                    class_timetable = daysdefs_lessons,
-                    not_lesson = True
-                )
+                            if day_id not in daysdefs_lessons:
+                                daysdefs_lessons[day_id] = deepcopy(null_timetable)
 
-                daysdefs_lessons__: Dict[str, List[str]] = {}
+                            int_lesson_period: int = int(lesson.period)
 
-                for day_id in daysdefs_lessons.keys():
-                    for period_id, value in daysdefs_lessons[day_id].items():
-                        if day_id not in daysdefs_lessons__:
-                            daysdefs_lessons__[day_id] = []
+                            for i in range(lesson.durationperiods):
+                                period_id: str = str(int_lesson_period + i)
+                                period: dict = tables_["periods"][period_id]
 
-                        daysdefs_lessons__[day_id].append(value)
+                                daysdefs_lessons[day_id][period_id] = TEXTS["edupage"]["timetable"]["lesson"].format(
+                                    period = period["name"],
+                                    start_time = period["starttime"],
+                                    end_time = period["endtime"],
+                                    subject = tables_["subjects"][lesson.subjectid]["name"].strip(),
+                                    teachers = ", ".join([tables_["teachers"][teacher_id]["lastname"].strip() for teacher_id in lesson.teacherids]),
+                                    groups = ", ".join([tables_["groups"][group_id]["name"] for group_id in lesson.groupids]).lower(),
+                                    classrooms = (
+                                        ", ".join([tables_["classrooms"][classroom_id]["name"].strip().split(" ", 1)[0] for classroom_id in lesson.classroomidss])
+                                        if lesson.classroomidss and lesson.classroomidss[0] != ""
+                                        else
+                                        ", ".join([" | ".join([tables_["classrooms"][classroom_id]["name"].strip().split(" ", 1)[0] for classroom_id in classroom_idss]) for classroom_idss in lesson.classroomidss])
+                                    )
+                                )
 
-                is_known_class: bool = class_id in known_class_ids
+                            class_timetable[day_id][period_id] = asdict(lesson)
+                            classes_timetables[timetable_number][class_id][day_id][period_id] = lesson
 
-                class_: dict = (
-                    config.timetable.classes[classes_by_timetable_and_id_to_name[timetable_number][class_id]]
-                    if is_known_class
-                    else
-                    config.default_class
-                )
+                    daysdefs_lessons = timetable_api.sort(
+                        class_timetable = daysdefs_lessons,
+                        not_lesson = True
+                    )
 
-                await bot.send_message(
-                    chat_id = (
-                        class_["channel_id"]
+                    daysdefs_lessons__: Dict[str, List[str]] = {}
+
+                    for day_id in daysdefs_lessons.keys():
+                        for period_id, value in daysdefs_lessons[day_id].items():
+                            if day_id not in daysdefs_lessons__:
+                                daysdefs_lessons__[day_id] = []
+
+                            daysdefs_lessons__[day_id].append(value)
+
+                    is_known_class: bool = class_id in known_class_ids
+
+                    class_: dict = (
+                        config.timetable.classes[classes_by_timetable_and_id_to_name[timetable_number][class_id]]
                         if is_known_class
                         else
-                        config.default_class["channel_id"]
-                    ),
-                    text = TEXTS["edupage"]["timetable"]["default"].format(
-                        additional_text = TEXTS["edupage"]["timetable"]["changed"],
-                        daysdefs = "\n\n".join([
-                            TEXTS["edupage"]["timetable"]["daysdef"].format(
-                                daysdef = tables_["daysdefs"][day_id]["name"],
-                                lessons = "\n".join(lessons)
-                            )
-                            for day_id, lessons in daysdefs_lessons__.items()
-                        ]),
-                        main_channel_url = config.main_channel_url,
-                        post_channel_href = (
-                            TEXTS["edupage"]["timetable"]["url"].format(
-                                url = class_["post_channel_url"],
-                                class_name = class_["name"]
-                            )
-                            if is_known_class and class_["channel_id"] != -1
+                        config.default_class
+                    )
+
+                    await bot.send_message(
+                        chat_id = (
+                            class_["channel_id"]
+                            if is_known_class
                             else
-                            config.timetable.classes[classes_by_timetable_and_id_to_name[timetable_number][class_id]]["name"]
-                        )
-                    ),
-                    disable_web_page_preview = True
-                )
+                            config.default_class["channel_id"]
+                        ),
+                        text = TEXTS["edupage"]["timetable"]["default"].format(
+                            additional_text = TEXTS["edupage"]["timetable"]["changed"],
+                            daysdefs = "\n\n".join([
+                                TEXTS["edupage"]["timetable"]["daysdef"].format(
+                                    daysdef = tables_["daysdefs"][day_id]["name"],
+                                    lessons = "\n".join(lessons)
+                                )
+                                for day_id, lessons in daysdefs_lessons__.items()
+                            ]),
+                            main_channel_url = config.main_channel_url,
+                            post_channel_href = (
+                                TEXTS["edupage"]["timetable"]["url"].format(
+                                    url = class_["post_channel_url"],
+                                    class_name = class_["name"]
+                                )
+                                if is_known_class and class_["channel_id"] != -1
+                                else
+                                config.timetable.classes[classes_by_timetable_and_id_to_name[timetable_number][class_id]]["name"]
+                            )
+                        ),
+                        disable_web_page_preview = True
+                    )
 
-                await sleep(
-                    delay = 0.04
-                )
+                    await sleep(
+                        delay = 0.04
+                    )
 
-            timetable_api.save_storage()
+                timetable_api.save_storage()
 
-            tables[timetable_number] = tables_
+                tables[timetable_number] = tables_
 
-        save_json(
-            filename = config.timetable.classes_filename,
-            data = classes_timetables
+            save_json(
+                filename = config.timetable.classes_filename,
+                data = classes_timetables
+            )
+
+            await sleep(
+                delay = seconds
+            )
+
+    except Exception as ex:
+        await errors_handler(
+            update = None,
+            exception = ex
         )
 
-        await sleep(
-            delay = seconds
-        )
+        return
 
 
 async def timetable_load() -> None:
@@ -576,7 +585,7 @@ async def admins_notify(text: str) -> None:
 
 
 @dp.errors_handler()
-async def errors_handler(update: types.Update, exception: Exception) -> bool:
+async def errors_handler(update: Union[types.Update, None], exception: Exception) -> bool:
     type_: object = type(exception)
 
     if type_ == exceptions.InvalidQueryID:
@@ -621,9 +630,9 @@ async def on_startup() -> bool:
     try:
         await timetable_load()
 
-    except KeyError as ex:
+    except Exception as ex:
         await errors_handler(
-            update = {},
+            update = None,
             exception = ex
         )
 
