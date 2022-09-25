@@ -94,7 +94,7 @@ async def notifier(seconds: int) -> None:
         for timetable_number in config.timetable.numbers:
             timetable, tables_ = await timetable_api.get_newest_timetables(
                 timetable_number = timetable_number,
-                old_tables = tables
+                old_tables = tables[timetable_number]
             )
 
             if not timetable:
@@ -213,7 +213,12 @@ async def notifier(seconds: int) -> None:
 
             timetable_api.save_storage()
 
-            tables = tables_
+            tables[timetable_number] = tables_
+
+        save_json(
+            filename = config.timetable.classes_filename,
+            data = classes_timetables
+        )
 
         await sleep(
             delay = seconds
@@ -428,7 +433,12 @@ async def callback_query_handler(callback_query: types.CallbackQuery) -> None:
                 config.timetable.numbers[0]
                 if args_len != 4
                 else
-                args[3]
+                (
+                    config.timetable.old_numbers[args[3]]
+                    if args[3] in config.timetable.old_numbers
+                    else
+                    args[3]
+                )
             )
 
             class_: dict = config.timetable.classes[classes_by_timetable_and_id_to_name[timetable_number][class_id]]
@@ -590,7 +600,7 @@ async def errors_handler(update: types.Update, exception: Exception) -> bool:
         return True
 
     await admins_notify(
-        text = TEXTS["admins"]["unknown"].format(
+        text = TEXTS["admins"]["unknown_error"].format(
             traceback = format_exc(),
             update = update.as_json()
         )

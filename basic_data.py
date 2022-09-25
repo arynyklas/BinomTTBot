@@ -16,7 +16,7 @@ TEXTS: dict = {
             "default": "#error #timetables\nНет доступа к расписаниям.\nСписок расписаний:\n{timetables}",
             "timetable": "<code>{number}</code> - <i>{text}</i>"
         },
-        "unknown_error": "#error\nНеизвестная ошибка:\n{traceback}\n\n{update}"
+        "unknown_error": "#error\nНеизвестная ошибка:\n<code>{traceback}</code>\n\n<code>{update}</code>"
     },
     "start": "Привет!\nЯ даю расписания для всех классов.\nВыберите Ваш класс:",
     "keyboards": {

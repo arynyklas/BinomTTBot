@@ -323,7 +323,7 @@ class TimeTable:
 
         card_ids: List[str] = []
 
-        for d in diff_checker(old_tables[timetable_number][table_id], tables[table_id]):
+        for d in diff_checker(old_tables[table_id], tables[table_id]):
             d_type: str = d[0]
             card_id: str
 

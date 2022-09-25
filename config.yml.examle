@@ -1,5 +1,5 @@
 bot_token: ''
-notifier_seconds: 60
+notifier_seconds: 120
 per_page_limit: 20
 db_uri: 'mongodb://localhost:27017'
 db_name: ''

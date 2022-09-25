@@ -10,6 +10,7 @@ class TimetableConfig:
     response_filename: str
     classes_filename: str
     numbers: List[str]
+    old_numbers: Dict[str, str]
     classes: Dict[str, Dict[str, Union[str, int]]]
 
 
