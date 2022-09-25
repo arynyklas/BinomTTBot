@@ -4,7 +4,10 @@ from json import loads as loads_json
 from utils import read_json, save_json
 
 from dataclasses import dataclass
+from pytz import timezone
+from pytz.tzinfo import DstTzInfo
 from hashlib import md5
+from datetime import datetime
 from dictdiffer import diff as diff_checker
 from copy import deepcopy
 
@@ -37,13 +40,23 @@ class Lesson:
     period: str
 
 
+@dataclass
+class TimeTableInfo:
+    number: str
+    text: str
+
+
 class TimeTable:
-    API_URL: str = "https://binomcapital.edupage.org/timetable/server/regulartt.js?__func=regularttGetData"
+    API_URL: str = "https://binomcapital.edupage.org{path}"
 
     INCORRECT_PERIODS: List[str] = [
         "",
         "-1"
     ]
+
+    TZ: DstTzInfo = timezone(
+        zone = "Asia/Almaty"
+    )
 
     def __init__(self, storage_path: str, response_path: str) -> None:
         self.storage_path: str = storage_path
@@ -85,6 +98,19 @@ class TimeTable:
 
         return result
 
+    def load_tables(self, tables: List[dict]) -> Dict[str, Dict[str, dict]]:
+        results: Dict[str, Dict[str, dict]] = {}
+
+        for table_data in tables:
+            table_id: str = table_data["id"]
+
+            if table_id in tables_list:
+                results[table_id] = self.table_to_dict(
+                    table_rows = table_data["data_rows"]
+                )
+
+        return results
+
     async def request(self, url: str, method: str, **kwargs) -> str:
         session: ClientSession = getattr(
             self,
@@ -121,23 +147,15 @@ class TimeTable:
 
         return response_text
 
-    def load_tables(self, tables: List[dict]) -> Dict[str, Dict[str, dict]]:
-        results: Dict[str, Dict[str, dict]] = {}
-
-        for table_data in tables:
-            table_id: str = table_data["id"]
-
-            if table_id in tables_list:
-                results[table_id] = self.table_to_dict(
-                    table_rows = table_data["data_rows"]
-                )
-
-        return results
-
-    async def get_timetables(self, timetable_number: str, class_ids: Optional[List[str]]=None) -> Tuple[Dict[str, Dict[str, Dict[str, Lesson]]], Dict[str, Dict[str, dict]]]:
-        response_text: str = await self.request(
-            url = self.API_URL,
+    async def _get_timetables(self, timetable_number: str) -> str:
+        return await self.request(
+            url = self.API_URL.format(
+                path = "/timetable/server/regulartt.js"
+            ),
             method = hdrs.METH_POST,
+            params = {
+                "__func": "regularttGetData"
+            },
             json = {
                 "__args": [
                     None,
@@ -145,6 +163,50 @@ class TimeTable:
                 ],
                 "__gsh": "00000000"
             }
+        )
+
+    async def get_active_timetables_info(self) -> List[TimeTableInfo]:
+        response_text: str = await self.request(
+            url = self.API_URL.format(
+                path = "/timetable/server/ttviewer.js"
+            ),
+            method = hdrs.METH_POST,
+            params = {
+                "__func": "getTTViewerData"
+            },
+            json = {
+                "__args": [
+                    None,
+                    str(datetime.now(
+                        tz = self.TZ
+                    ).year)
+                ],
+                "__gsh": "00000000"
+            }
+        )
+
+        response_json: dict = loads_json(
+            s = response_text
+        )["r"]["regular"]["timetables"]
+
+        results: List[TimeTableInfo] = []
+
+        for timetable in response_json:
+            timetable: dict
+
+            if not timetable["hidden"]:
+                results.append(
+                    TimeTableInfo(
+                        number = timetable["tt_num"],
+                        text = timetable["text"]
+                    )
+                )
+
+        return results
+
+    async def get_timetables(self, timetable_number: str, class_ids: Optional[List[str]]=None) -> Tuple[Dict[str, Dict[str, Dict[str, Lesson]]], Dict[str, Dict[str, dict]]]:
+        response_text: str = await self._get_timetables(
+            timetable_number = timetable_number
         )
 
         calculated_hash: str = md5(
@@ -156,7 +218,7 @@ class TimeTable:
         else:
             self.storage["latest_hash"] = calculated_hash
 
-        response: dict = loads_json(
+        response_json: dict = loads_json(
             s = response_text
         )
 
@@ -164,13 +226,13 @@ class TimeTable:
             filename = self.response_path.format(
                 number = timetable_number
             ),
-            data = response
+            data = response_json
         )
 
-        response: List[dict] = response["r"]["dbiAccessorRes"]["tables"]
+        response_json: List[dict] = response_json["r"]["dbiAccessorRes"]["tables"]
 
         tables: Dict[str, Dict[str, dict]] = self.load_tables(
-            tables = response
+            tables = response_json
         )
 
         val_id_daysdefs: Dict[str, str] = {}
@@ -217,16 +279,8 @@ class TimeTable:
         return results, tables
 
     async def get_newest_timetables(self, timetable_number: str, old_tables: Dict[str, Dict[str, dict]]) -> Tuple[Dict[str, Dict[str, Dict[str, Lesson]]], Dict[str, Dict[str, dict]]]:
-        response_text: str = await self.request(
-            url = self.API_URL,
-            method = hdrs.METH_POST,
-            json = {
-                "__args": [
-                    None,
-                    timetable_number
-                ],
-                "__gsh": "00000000"
-            }
+        response_text: str = await self._get_timetables(
+            timetable_number = timetable_number
         )
 
         calculated_hash: str = md5(
@@ -238,7 +292,7 @@ class TimeTable:
         else:
             self.storage["latest_hash"] = calculated_hash
 
-        response: dict = loads_json(
+        response_json: dict = loads_json(
             s = response_text
         )
 
@@ -246,13 +300,13 @@ class TimeTable:
             filename = self.response_path.format(
                 number = timetable_number
             ),
-            data = response
+            data = response_json
         )
 
-        response: List[dict] = response["r"]["dbiAccessorRes"]["tables"]
+        response_json: List[dict] = response_json["r"]["dbiAccessorRes"]["tables"]
 
         tables: Dict[str, Dict[str, dict]] = self.load_tables(
-            tables = response
+            tables = response_json
         )
 
         val_id_daysdefs: Dict[str, str] = {}

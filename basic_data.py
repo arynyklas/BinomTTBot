@@ -8,8 +8,15 @@ TEXTS: dict = {
             "daysdef": "{daysdef}:\n{lessons}",
             "lesson": "{period} ({start_time} - {end_time}) - {subject} ({teachers}) - {groups} - [{classrooms}]",
             "unknown_lesson": "{period} ({start_time} - {end_time}) - Ничего",
-            "url": "<a href=\"{url}\">{class_name}</a>",
+            "url": "<a href=\"{url}\">{class_name}</a>"
         }
+    },
+    "admins": {
+        "table_rights_changed": {
+            "default": "#error #timetables\nНет доступа к расписаниям.\nСписок расписаний:\n{timetables}",
+            "timetable": "<code>{number}</code> - <i>{text}</i>"
+        },
+        "unknown_error": "#error\nНеизвестная ошибка:\n{traceback}\n\n{update}"
     },
     "start": "Привет!\nЯ даю расписания для всех классов.\nВыберите Ваш класс:",
     "keyboards": {

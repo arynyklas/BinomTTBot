@@ -5,6 +5,8 @@ db_uri: 'mongodb://localhost:27017'
 db_name: ''
 main_channel_url: 'https://t.me/'
 inline_cache_time: 300
+admins:
+  - 123456789
 clear_class:
   id: ''
   channel_id: -1
@@ -20,8 +22,8 @@ timetable:
   response_filename: timetable_response_{number}.json
   classes_filename: timetable_classes.json
   numbers:
-    - '58'
-    - '61'
+    - '64'
+    - '65'
   classes:
     '1 А':
       name: '1 А'

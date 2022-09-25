@@ -4,7 +4,7 @@ from aiogram.dispatcher.handler import CancelHandler
 
 from asyncio import sleep
 
-from edupage import Lesson, TimeTable
+from edupage import Lesson, TimeTableInfo, TimeTable
 from db import User, init_db
 from keyboards import Keyboards
 from utils import read_json, save_json
@@ -14,6 +14,7 @@ from config import config
 from copy import deepcopy
 from dataclasses import asdict
 from hashlib import md5
+from traceback import format_exc
 
 from typing import Dict, List, Optional, Tuple, Union
 
@@ -550,18 +551,73 @@ async def bot_start_command_handler(message: types.Message) -> None:
     )
 
 
+async def admins_notify(text: str) -> None:
+    for admin in config.admins:
+        admin: int
+
+        try:
+            await bot.send_message(
+                chat_id = admin,
+                text = text
+            )
+
+        except exceptions.TelegramAPIError:
+            pass
+
+
+@dp.errors_handler()
+async def errors_handler(update: types.Update, exception: Exception) -> bool:
+    type_: object = type(exception)
+
+    if type_ == exceptions.InvalidQueryID:
+        return True
+
+    elif type_ == KeyError and exception.args[0] == "dbiAccessorRes":
+        timetables: List[TimeTableInfo] = await timetable_api.get_active_timetables_info()
+
+        await admins_notify(
+            text = TEXTS["admins"]["table_rights_changed"]["default"].format(
+                timetables = "\n".join([
+                    TEXTS["admins"]["table_rights_changed"]["timetable"].format(
+                        number = timetable.number,
+                        text = timetable.text
+                    )
+                    for timetable in timetables
+                ])
+            )
+        )
+
+        return True
+
+    await admins_notify(
+        text = TEXTS["admins"]["unknown"].format(
+            traceback = format_exc(),
+            update = update.as_json()
+        )
+    )
+
+
 dp.middleware.setup(
     middleware = UsersMiddleware()
 )
 
 
-async def on_startup() -> None:
+async def on_startup() -> bool:
     await init_db(
         db_uri = config.db_uri,
         db_name = config.db_name
     )
 
-    await timetable_load()
+    try:
+        await timetable_load()
+
+    except KeyError as ex:
+        await errors_handler(
+            update = {},
+            exception = ex
+        )
+
+        return False
 
     for timetable_number in config.timetable.numbers:
         for class_id, class_ in tables[timetable_number]["classes"].items():
@@ -602,6 +658,8 @@ async def on_startup() -> None:
             class_["id"]
         )
 
+    return True
+
 
 async def on_shutdown() -> None:
     await timetable_api.close()
@@ -609,11 +667,19 @@ async def on_shutdown() -> None:
     await dp.storage.close()
     await dp.storage.wait_closed()
 
+    if bot._session:
+        await bot._session.close()
+
 
 async def main() -> None:
     from asyncio import gather
 
-    await on_startup()
+    startup_ok: bool = await on_startup()
+
+    if not startup_ok:
+        await on_shutdown()
+
+        return
 
     await gather(
         notifier(

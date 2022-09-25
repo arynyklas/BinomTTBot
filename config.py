@@ -22,6 +22,7 @@ class Config:
     db_name: str
     main_channel_url: str
     inline_cache_time: int
+    admins: List[int]
     clear_class: dict
     default_class: dict
     timetable: TimetableConfig
