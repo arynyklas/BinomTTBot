@@ -1,4 +1,4 @@
-from aiogram import Bot, Dispatcher, types, exceptions, executor
+from aiogram import Bot, Dispatcher, types, exceptions
 from aiogram.dispatcher.middlewares import BaseMiddleware
 from aiogram.dispatcher.handler import CancelHandler
 
@@ -611,7 +611,12 @@ async def errors_handler(update: Union[types.Update, None], exception: Exception
     await admins_notify(
         text = TEXTS["admins"]["unknown_error"].format(
             traceback = format_exc(),
-            update = update.as_json()
+            update = (
+                update.as_json()
+                if update
+                else
+                ""
+            )
         )
     )
 
