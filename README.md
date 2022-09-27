@@ -22,3 +22,6 @@
 
 # Authors:
 ### [Aryn](https://t.me/aryn_bots) - 15 y.o.
+
+# License:
+### [MIT](../master/LICENSE.md)

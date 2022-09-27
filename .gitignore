@@ -2,4 +2,4 @@ __pycache__/
 __*
 test*
 *.json
-config.yml
+*config.yml

@@ -111,6 +111,13 @@ class TimeTable:
 
         return results
 
+    def get_current_year(self) -> str:
+        return str(
+            datetime.now(
+                tz = self.TZ
+            ).year
+        )
+
     async def request(self, url: str, method: str, **kwargs) -> str:
         session: ClientSession = getattr(
             self,
@@ -177,9 +184,7 @@ class TimeTable:
             json = {
                 "__args": [
                     None,
-                    str(datetime.now(
-                        tz = self.TZ
-                    ).year)
+                    self.get_current_year()
                 ],
                 "__gsh": "00000000"
             }

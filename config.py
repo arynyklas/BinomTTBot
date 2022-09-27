@@ -1,5 +1,5 @@
-from dataclasses import dataclass
-from yaml import load as load_yaml, Loader
+from dataclasses import dataclass, asdict
+from yaml import load as load_yaml, Loader, dump as dump_yaml
 
 from typing import Dict, List, Union
 
@@ -29,7 +29,10 @@ class Config:
     timetable: TimetableConfig
 
 
-with open("config.yml", "r", encoding="utf-8") as file:
+config_filename: str = "config.yml"
+
+
+with open(config_filename, "r", encoding="utf-8") as file:
     data: dict = load_yaml(
         stream = file,
         Loader = Loader
@@ -45,6 +48,17 @@ config: Config = Config(
 )
 
 
+def save_config(config: Config) -> None:
+    with open(config_filename, "w", encoding="utf-8") as file:
+        dump_yaml(
+            data = asdict(config),
+            allow_unicode = True,
+            indent = 2
+        )
+
+
 __all__ = (
+    "config_filename",
     "config",
+    "save_config",
 )
