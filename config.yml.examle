@@ -1,9 +1,10 @@
 bot_token: ''
-notifier_seconds: 120
-per_page_limit: 20
 db_uri: 'mongodb://localhost:27017'
 db_name: ''
 main_channel_url: 'https://t.me/'
+notifier_seconds: 120
+per_page_limit: 20
+per_notify_sleep: 0.04
 inline_cache_time: 300
 admins:
   - 123456789

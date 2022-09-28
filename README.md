@@ -5,6 +5,7 @@
 ### [Python](https://www.python.org/) - 3.7+
 ### [beanie](https://pypi.org/project/beanie/) - 1.11.9
 ### [dictdiffer](https://pypi.org/project/dictdiffer/) - 0.9.0
+### [aiohttp](https://pypi.org/project/aiohttp/) - 3.8.1
 
 # Config setup:
 - Rename `config.yml.example` to `config.yml`

@@ -17,11 +17,12 @@ class TimetableConfig:
 @dataclass
 class Config:
     bot_token: str
-    notifier_seconds: int
-    per_page_limit: int
     db_uri: str
     db_name: str
     main_channel_url: str
+    notifier_seconds: int
+    per_page_limit: int
+    per_notify_sleep: float
     inline_cache_time: int
     admins: List[int]
     clear_class: dict
@@ -37,6 +38,7 @@ with open(config_filename, "r", encoding="utf-8") as file:
         stream = file,
         Loader = Loader
     )
+
 
 timetable: TimetableConfig = TimetableConfig(
     **data.pop("timetable")

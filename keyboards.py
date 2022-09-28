@@ -2,7 +2,7 @@ from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
 from itertools import islice
 
-from typing import Iterator, Dict, Callable, List, Union
+from typing import Any, Iterator, Dict, Callable, List, Union
 
 
 def chunks(data: dict, size: int):
@@ -20,69 +20,72 @@ class Keyboards:
         self._texts: dict = texts
         self._per_page_limit: int = per_page_limit
 
-        self._classes: List[Dict[str, Dict[str, Union[str, int]]]] = list(chunks(
-            data = classes,
-            size = per_page_limit
-        ))
+        self._max_classes_page: int
 
-        self._max_classes_page: int = len(self._classes) - 1
+        self.classes: List[InlineKeyboardMarkup]
 
-    def get_classes(self, page: int) -> None:
-        markup: InlineKeyboardMarkup = InlineKeyboardMarkup(
-            row_width = 2
+        self.update_classes(
+            classes = classes
         )
 
-        for i, class_name in enumerate(self._classes[page].keys(), 0):
-            i: int
-            class_name: str
+    def update_classes(self, classes: Dict[str, Dict[str, Union[str, int]]]) -> None:
+        self.classes = []
 
-            class_: dict = self._classes[page][class_name]
+        _classes: List[Any] = list(chunks(
+            data = classes,
+            size = self._per_page_limit
+        ))
 
-            func: Callable
+        self._max_classes_page = len(_classes) - 1
 
-            if i % self._per_page_limit == 0 or i % 2 == 0:
-                func = markup.add
-            else:
-                func = markup.insert
+        for page in range(len(_classes)):
+            page: int
 
-            func(
-                InlineKeyboardButton(
-                    text = class_name,
-                    callback_data = "timetable_class_{class_id}_{timetable_number}".format(
-                        class_id = class_["id"],
-                        timetable_number = class_["timetable_number"]
-                    )
-                )
+            class_markup: InlineKeyboardMarkup = InlineKeyboardMarkup(
+                row_width = 2
             )
 
-        have_prev: bool = page > 0
+            for class_name, class_ in _classes[page].items():
+                class_name: str
 
-        if have_prev:
-            markup.add(
-                InlineKeyboardButton(
-                    text = self._texts["prev"],
-                    callback_data = "timetable_page_{page}".format(
-                        page = page - 1
+                class_markup.insert(
+                    InlineKeyboardButton(
+                        text = class_name,
+                        callback_data = "timetable_class_{class_id}_{timetable_number}".format(
+                            class_id = class_["id"],
+                            timetable_number = class_["timetable_number"]
+                        )
                     )
                 )
-            )
 
-        if self._max_classes_page > page:
+            have_prev: bool = page > 0
+
             if have_prev:
-                func = markup.insert
-            else:
-                func = markup.add
-
-            func(
-                InlineKeyboardButton(
-                    text = self._texts["next"],
-                    callback_data = "timetable_page_{page}".format(
-                        page = page + 1
+                class_markup.add(
+                    InlineKeyboardButton(
+                        text = self._texts["prev"],
+                        callback_data = "timetable_page_{page}".format(
+                            page = page - 1
+                        )
                     )
                 )
-            )
 
-        return markup
+            if self._max_classes_page > page:
+                if have_prev:
+                    func = class_markup.insert
+                else:
+                    func = class_markup.add
+
+                func(
+                    InlineKeyboardButton(
+                        text = self._texts["next"],
+                        callback_data = "timetable_page_{page}".format(
+                            page = page + 1
+                        )
+                    )
+                )
+
+            self.classes.append(class_markup)
 
     def inline_timetable(self, channel_url: str) -> str:
         return InlineKeyboardMarkup(

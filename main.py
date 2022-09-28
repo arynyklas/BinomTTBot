@@ -382,10 +382,17 @@ async def callback_query_handler(callback_query: types.CallbackQuery) -> None:
             )
 
         elif args[1] == "page":
+            page: int = int(args[2])
+
+            classes_markup: types.InlineKeyboardMarkup
+
+            if page > keyboards._max_classes_page:
+                classes_markup = keyboards.classes[0]
+            else:
+                classes_markup = keyboards.classes[page]
+
             await callback_query.message.edit_reply_markup(
-                reply_markup = keyboards.get_classes(
-                    page = int(args[2])
-                )
+                reply_markup = classes_markup
             )
 
 
@@ -393,9 +400,7 @@ async def callback_query_handler(callback_query: types.CallbackQuery) -> None:
 async def bot_start_command_handler(message: types.Message) -> None:
     await message.answer(
         text = TEXTS["start"],
-        reply_markup = keyboards.get_classes(
-            page = 0
-        )
+        reply_markup = keyboards.classes[0]
     )
 
 
@@ -472,10 +477,8 @@ async def timetable_load() -> None:
         for class_id in classes_timetables_.keys():
             for day_id in classes_timetables_[class_id].keys():
                 for period_id, lesson in classes_timetables_[class_id][day_id].items():
-                    if not lesson:
-                        continue
-
-                    classes_timetables_[class_id][day_id][period_id] = asdict(lesson)
+                    if lesson:
+                        classes_timetables_[class_id][day_id][period_id] = asdict(lesson)
 
         classes_timetables[timetable_number] = classes_timetables_
 
@@ -590,6 +593,10 @@ async def notifier(seconds: int) -> None:
 
                 config.timetable.classes = current_classes
 
+                keyboards.update_classes(
+                    classes = config.timetable.classes
+                )
+
                 timetable, tables_ = await timetable_api.get_newest_timetables(
                     timetable_number = timetable_number,
                     old_tables = tables[timetable_number]
@@ -649,8 +656,7 @@ async def notifier(seconds: int) -> None:
                                 )
                             )
 
-                        class_timetable[day_id][period_id] = asdict(lesson)
-                        classes_timetables[timetable_number][class_id][day_id][period_id] = lesson
+                        classes_timetables[timetable_number][class_id][day_id][period_id] = asdict(lesson)
 
                 daysdefs_lessons = timetable_api.sort(
                     class_timetable = daysdefs_lessons,
@@ -706,7 +712,7 @@ async def notifier(seconds: int) -> None:
                 )
 
                 await sleep(
-                    delay = 0.04
+                    delay = config.per_notify_sleep
                 )
 
             timetable_api.save_storage()
